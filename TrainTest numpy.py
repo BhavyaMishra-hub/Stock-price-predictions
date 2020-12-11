@@ -44,7 +44,7 @@ for i in range (1,len(date)):
     if Close[i] > Close[i-1] :
         Momentum[i] = "1"
     else :
-        Momentum[i] = "0"
+        Momentum[i] = "-1"
         
         
 momen = pd.DataFrame(Momentum)
@@ -59,8 +59,8 @@ data['Month-str-full'] = data['Date'].dt.strftime('%B')
 
 # I keep 2015 - 16 as test and 2008 - 2014 as train
 
-train_pd = data[data['Year'].isin(['2015', '2016'])]
-test_pd = data[data['Year'].isin(['2008', '2009', '2010', '2011', '2012', '2013', '2014'])]
+test_pd = data[data['Year'].isin(['2015', '2016'])]
+train_pd = data[data['Year'].isin(['2008', '2009', '2010', '2011', '2012', '2013', '2014'])]
 
 features = ['Open', 'High', 'Low', 'Close', 'Volume', 'News Sentiment']
 
@@ -82,11 +82,13 @@ accuracy_score(y_test, ypred)
 #Using Ridge Regression
 def error_func(w, Xtest, Ytest):
     yhat = Xtest@w
-    error = []
-    for i in range(len(Ytest)):
-        error.append(np.subtract(Ytest, yhat))
-        
-    return sum(error)/len(error)
+    y_calc_sign = np.sign(yhat)
+    count = 0
+    for i in range(368):
+          if(Ytest[i] != y_calc_sign[i]):
+            count +=1
+    
+    return count/368
 
 
 #Ridge function takes the training and test datasets and the D/I matrix
@@ -113,6 +115,9 @@ def ridgeX(x_train, y_train, x_test, y_test, matrix):
             min_error = error
         #This checks if the errors of each lambda are lesser than the errors when lambda = 1. If yes then it gives 
         # weights corresponding to that lambda    
+            
+        #The function however does not tell which lambda gave the least error
+        # ie. we dont know which is best lambda.     
 
     return min_w
 
@@ -138,3 +143,19 @@ I = np.identity(m)
 
 w_ridgeD = ridgeX(X_train, y_train, X_test, y_test, D)
 w_ridgeI = ridgeX(X_train, y_train, X_test, y_test, I)
+w_ols = la.inv(X_train.T@X_train)@X_train.T@y_train
+
+
+def error_func2(w, Xtest, Ytest):
+    yhat = Xtest@w
+    error = []
+    for i in range(len(Ytest)):
+        error.append(np.subtract(Ytest, yhat))
+    
+    return np.sum(error)
+## This error function2 needs to return a scaler error rate. However it still gives
+## the error of each sample :////
+
+error_ridgeD = error_func2(w_ridgeD, X_test, y_test)
+error_ridgeI = error_func2(w_ridgeI, X_test, y_test)
+error_w_ols = error_func2(w_ols, X_test, y_test)
