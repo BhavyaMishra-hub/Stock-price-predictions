@@ -161,3 +161,44 @@ error_ridgeI = error_func(w_ridgeI, X_test, y_test)
 error_w_ols = error_func(w_ols, X_test, y_test)
 
 ## Ridge Regression with D matrix and OLS always give the same weights.
+
+
+
+#################################################################
+# https://towardsdatascience.com/implement-svm-with-python-in-2-minutes-c4deb9650a02
+
+## Try SVM without Scikit-Learn
+def loss(W, x, y, C):
+    return 1/2 * np.sum(W**2) + C * np.sum([np.max([0, 1 - y[i] * (W @ x[i])]) for i in range(x.shape[0])])
+
+
+def lossGradient(W, x, y, C):
+    '''
+    Loss gradient for SGD with batch size 1 only
+    '''
+    lossGrad = np.zeros_like(W)
+    distance = np.max([0, 1 - y * (W @ x)])
+    if distance == 0:
+        lossGrad = W
+    else:
+        lossGrad = W - C * y * x
+            
+    return lossGrad
+
+
+W = np.random.random(X_train.shape[1])
+N_STEPS = 100
+lr = 1e-4
+C = 1e-4
+
+for step in range(N_STEPS):
+    for pi, p in enumerate(X_train):
+        W = W - lr*lossGradient(W, p, y_train[i], C = C)
+    if step % 10 == 0:
+        print(f'Current Loss {loss(W, X_train, y_train,C = C)} Step {step}')
+        
+w_SVM = W
+
+error_SVM = error_func(W, X_test, y_test)
+
+## The final error rates are error_ridgeD, error_ridgeI, error_w_ols, error_SVM
