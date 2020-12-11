@@ -16,7 +16,12 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy.linalg as la
 import pandas as pd
 import datetime
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import cross_val_score
 
+
+#Change working directory
 import os 
 os.chdir(r"D:\GitHub\Stock-price-predictions")  
 
@@ -58,7 +63,19 @@ train_pd = data[data['Year'].isin(['2015', '2016'])]
 test_pd = data[data['Year'].isin(['2008', '2009', '2010', '2011', '2012', '2013', '2014'])]
 
 features = ['Open', 'High', 'Low', 'Close', 'Volume', 'News Sentiment']
+
+
+
 X_train = np.array(train_pd[features], dtype = 'float')
 y_train = np.array(train_pd['Momentum'], dtype = 'float')
 X_test = np.array(test_pd[features], dtype = 'float')
 y_test = np.array(test_pd['Momentum'], dtype = 'float')
+
+
+#Using SVM 
+
+
+model = SVC()
+model.fit(X_train, y_train)
+ypred = model.predict(X_test)
+accuracy_score(y_test, ypred)
