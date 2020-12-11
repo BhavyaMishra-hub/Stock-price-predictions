@@ -62,7 +62,7 @@ data['Month-str-full'] = data['Date'].dt.strftime('%B')
 test_pd = data[data['Year'].isin(['2015', '2016'])]
 train_pd = data[data['Year'].isin(['2008', '2009', '2010', '2011', '2012', '2013', '2014'])]
 
-features = ['Open', 'High', 'Low', 'Close', 'Volume', 'News Sentiment']
+features = ['Open', 'High', 'Low', 'Volume', 'News Sentiment']
 
 
 
@@ -79,16 +79,25 @@ ypred = model1.predict(X_test)
 accuracy_score(y_test, ypred)
 
 
+#Xtest = pd.DataFrame(Xtest1)
+    #Ytest = pd.DataFrame(Ytest1)
+#    yhat = Xtest@w
+#    y_calc_sign = np.sign(yhat)
+#    count = 0
+#    for i in range(len(Ytest)):
+#          if(Ytest.iloc[i] != y_calc_sign.iloc[i]):
+#            count +=1
+    
+
 #Using Ridge Regression
 def error_func(w, Xtest, Ytest):
-    yhat = Xtest@w
-    y_calc_sign = np.sign(yhat)
-    count = 0
-    for i in range(368):
-          if(Ytest[i] != y_calc_sign[i]):
-            count +=1
+    error_rates = []
     
-    return count/368
+    error_rate = sum(np.where(Xtest@w>0, 1, -1) == Ytest)
+    error_rates.append(float(368-error_rate)/368)
+    
+    
+    return error_rates
 
 
 #Ridge function takes the training and test datasets and the D/I matrix
@@ -97,13 +106,13 @@ def error_func(w, Xtest, Ytest):
     
 def ridgeX(x_train, y_train, x_test, y_test, matrix): 
        
-    min_w = np.linalg.inv(x_train.T@x_train + 1*matrix)@x_train.T@y_train
-    #Here the min_w is calculated with lambda = 1
+    min_w = np.linalg.inv(x_train.T@x_train + 2*matrix)@x_train.T@y_train
+    #Here the min_w is calculated with lambda = 5
 
     min_error = error_func(min_w, x_test, y_test)    
     #print(min_error.shape)
 
-    for i in range(2,10):
+    for i in [5, 10, 15, 50]:
         w = np.linalg.inv(x_train.T@x_train + i*matrix)@x_train.T@y_train
         #print(w.shape)
 
@@ -123,20 +132,21 @@ def ridgeX(x_train, y_train, x_test, y_test, matrix):
 
 
 # Making D Matrix
-D = np.zeros((6,6))
+n,m = X_train.shape
+D = np.zeros((m,m))
 
 D[0,0] = 1
 D[1,0] = -2
 D[1,1] = 1
 
-for i in range(2,6):
+for i in range(2,5):
     D[i,i] = 1
     D[i, i-1] = -2
     D[i, i-2] = -1
     
     
 # Making Identity matrix    
-I = n,m = X_train.shape
+
 I = np.identity(m)    
     
 
@@ -146,16 +156,8 @@ w_ridgeI = ridgeX(X_train, y_train, X_test, y_test, I)
 w_ols = la.inv(X_train.T@X_train)@X_train.T@y_train
 
 
-def error_func2(w, Xtest, Ytest):
-    yhat = Xtest@w
-    error = []
-    for i in range(len(Ytest)):
-        error.append(np.subtract(Ytest, yhat))
-    
-    return np.sum(error)
-## This error function2 needs to return a scaler error rate. However it still gives
-## the error of each sample :////
+error_ridgeD = error_func(w_ridgeD, X_test, y_test)
+error_ridgeI = error_func(w_ridgeI, X_test, y_test)
+error_w_ols = error_func(w_ols, X_test, y_test)
 
-error_ridgeD = error_func2(w_ridgeD, X_test, y_test)
-error_ridgeI = error_func2(w_ridgeI, X_test, y_test)
-error_w_ols = error_func2(w_ols, X_test, y_test)
+## Ridge Regression with D matrix and OLS always give the same weights.
