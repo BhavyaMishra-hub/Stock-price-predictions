@@ -25,14 +25,24 @@ from sklearn.model_selection import cross_val_score
 import os 
 os.chdir(r"D:\GitHub\Stock-price-predictions")  
 
+sentiment_df = pd.read_excel("news_sentiment_data.xlsx",sheet_name='Data')
+prices_df = pd.read_csv("DJIA Index.csv")
+sentiment_df['date']= pd.to_datetime(sentiment_df['date'])
+prices_df['Date']= pd.to_datetime(prices_df['Date'])
 
-data = pd.read_csv('model_features.csv')
+data = prices_df.merge(sentiment_df, left_on = 'Date', right_on = 'date')
+
+
+
+#model_features.to_csv("model_features.csv")
+
+data = data.drop('date', axis = 1)
 
 #Creating HighLow and CloseOpen
 data['HighLow'] = data['High'] - data['Low']
 data['CloseOpen'] = data['Close'] - data['Open']
 
-data = data.drop('Unnamed: 0', axis = 1)
+
 
 #Creating Binary Classifier Momemtum
 date = data['Date']
@@ -78,6 +88,7 @@ model1.fit(X_train, y_train)
 ypred = model1.predict(X_test)
 accuracy_score(y_test, ypred)
 
+error_SVM1 = (sum(np.where(ypred>0, 1, -1) == y_test))/368
 
 #Xtest = pd.DataFrame(Xtest1)
     #Ytest = pd.DataFrame(Ytest1)
@@ -199,6 +210,6 @@ for step in range(N_STEPS):
         
 w_SVM = W
 
-error_SVM = error_func(W, X_test, y_test)
+error_SVM2 = error_func(W, X_test, y_test)
 
 ## The final error rates are error_ridgeD, error_ridgeI, error_w_ols, error_SVM
