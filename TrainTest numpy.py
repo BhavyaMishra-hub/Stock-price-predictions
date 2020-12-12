@@ -24,6 +24,8 @@ from sklearn.model_selection import cross_val_score
 #Change working directory
 import os 
 os.chdir(r"D:\GitHub\Stock-price-predictions")  
+path = os.getcwd()
+
 
 sentiment_df = pd.read_excel("news_sentiment_data.xlsx",sheet_name='Data')
 prices_df = pd.read_csv("DJIA Index.csv")
@@ -57,9 +59,18 @@ for i in range (1,len(date)):
         Momentum[i] = "-1"
         
         
+        
 momen = pd.DataFrame(Momentum)
 data = data.merge(momen, left_index = True, right_index = True)
 data = data.rename({0: 'Momentum'}, axis = 1)
+
+#Giving a lag to momentum
+data['Momentum'] = data['Momentum'].shift(-1)
+
+
+#Removing last row
+data.drop(data.tail(1).index,inplace=True)
+
 
 
 data['Date'] = pd.to_datetime(data['Date'])
@@ -88,7 +99,10 @@ model1.fit(X_train, y_train)
 ypred = model1.predict(X_test)
 accuracy_score(y_test, ypred)
 
-error_SVM1 = (sum(np.where(ypred>0, 1, -1) == y_test))/368
+error_SVM1 = 1 - (sum(np.where(ypred>0, 1, -1) == y_test))/368
+#this error can be compared with the error that other OLS is giving
+
+
 
 #Xtest = pd.DataFrame(Xtest1)
     #Ytest = pd.DataFrame(Ytest1)
@@ -117,14 +131,14 @@ def error_func(w, Xtest, Ytest):
     
 def ridgeX(x_train, y_train, x_test, y_test, matrix): 
        
-    min_w = np.linalg.inv(x_train.T@x_train + 2*matrix)@x_train.T@y_train
+    min_w = np.linalg.inv(x_train.T@x_train + 5*matrix)@x_train.T@y_train
     #Here the min_w is calculated with lambda = 5
 
     min_error = error_func(min_w, x_test, y_test)    
     #print(min_error.shape)
 
     for i in [5, 10, 15, 50]:
-        w = np.linalg.inv(x_train.T@x_train + i*matrix)@x_train.T@y_train
+        w = np.linalg.inv(x_train.T@x_train + i*matrix.T@matrix)@x_train.T@y_train
         #print(w.shape)
 
         error = error_func(w, x_test, y_test)
@@ -213,3 +227,26 @@ w_SVM = W
 error_SVM2 = error_func(W, X_test, y_test)
 
 ## The final error rates are error_ridgeD, error_ridgeI, error_w_ols, error_SVM
+error_ridgeD
+error_ridgeI
+error_w_ols
+error_SVM1 #same
+error_SVM2 #same
+
+
+
+    
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+fig.suptitle('Weights from different columns')
+ax1.plot(w_ols)
+ax1.set_title('OLS')
+ax2.plot(w_SVM, 'tab:orange')
+ax2.set_title('SVM')
+ax3.plot(w_ridgeD, 'tab:green')
+ax3.set_title('Ridge Reg (D)')
+ax4.plot(w_ridgeI, 'tab:red')
+ax4.set_title('Ridge Reg (I)')
+for ax in fig.get_axes():
+    ax.label_outer()
+    
+fig.savefig(os.path.join(path))    
